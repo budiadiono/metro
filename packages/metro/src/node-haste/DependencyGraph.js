@@ -240,14 +240,16 @@ class DependencyGraph extends EventEmitter {
 
     const resolvedPath = fs.realpathSync(containerName);
     const sha1 = this._fileSystem.getSha1(resolvedPath);
-
+    
+    // ref: https://github.com/facebook/metro/issues/330#issue-389608574
     if (!sha1) {
-      throw new ReferenceError(
-        `SHA-1 for file ${filename} (${resolvedPath}) is not computed.
-         Potential causes:
-           1) You have symlinks in your project - watchman does not follow symlinks.
-           2) Check \`blockList\` in your metro.config.js and make sure it isn't excluding the file path.`,
-      );
+      return getFileHash(resolvedPath)
+      function getFileHash(file) {
+        return require('crypto')
+          .createHash('sha1')
+          .update(fs.readFileSync(file))
+          .digest('hex')
+      }
     }
 
     return sha1;
